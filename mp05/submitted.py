@@ -59,7 +59,7 @@ def bfs(maze):
                 visited.add(neighbors)  #mark neighbors as visited
     return []
 
-    
+
 
 
 def astar_single(maze):
@@ -78,14 +78,12 @@ def astar_single(maze):
     distance = {start: 0}
     frontier = PriorityQueue()
     frontier.put((0, start))
+
     while frontier:
-        node = frontier.get(1)
-        print(node)
-        priority, current = node    #get current location and priority from node
-        # print(current)
-        # print(current[0])
-        # print(current[1])
-        # print(priority)
+        node = frontier.get()
+        priority= node[0]  #get current location and priority from node
+        current = node[1]
+
         if current == target:
             #back trace to get the path
             path.append(current)
@@ -96,16 +94,13 @@ def astar_single(maze):
             path.append(start)
             path.reverse()
             return path
-        # print(current)
-        # print(current[0])
-        # print(current[1])
-        # print(priority)
+        
         for neighbors in maze.neighbors(current[0], current[1]):
             newDis = distance[current] + 1
             if(neighbors not in distance or newDis < distance[neighbors]):
                 distance[neighbors] = newDis
                 priority = newDis + abs(target[0] - neighbors[0]) + abs(target[1] - neighbors[1])
-                frontier.put(priority, neighbors)
+                frontier.put((priority, neighbors))
                 prev[neighbors] = current
     return []
 
