@@ -34,7 +34,7 @@ def random(side, board, flags, chooser):
     moves = [ move for move in generateMoves(side, board, flags) ]
     if len(moves) > 0:
         move = chooser(moves)
-        newside, newboard, newflags = makeMove(side, board, move[0], move[1], flags, move[2])
+        newside, newboard, newflagss = makeMove(side, board, move[0], move[1], flags, move[2])
         value = evaluate(newboard)
         return (value, [ move ], { encode(*move): {} })
     else:
@@ -56,7 +56,34 @@ def minimax(side, board, flags, depth):
       flags (list of flags): list of flags, used by generateMoves and makeMove
       depth (int >=0): depth of the search (number of moves)
     '''
-    raise NotImplementedError("you need to write this!")
+    moveList = []
+    moveTree = {}
+    moves = [move for move in generateMoves(side, board, flags)]
+    if depth == 0 or len(moves) == 0:
+      return (evaluate(board), moveList, moveTree)
+
+    if side == False:
+        value = -math.inf
+        for move in moves:
+            newside, newboard, newflags = makeMove(side, board, move[0], move[1], flags, move[2])
+            childval, childmoveList, childmoveTree = minimax(newside, newboard, newflags, depth-1)
+            moveTree[encode(*move)] = childmoveTree
+            if value < childval:
+              value = childval
+              moveList = [move] + childmoveList
+        return (value, moveList, moveTree)
+    else:
+        value = math.inf
+        for move in moves:
+            newside, newboard, newflags = makeMove(side, board, move[0], move[1], flags, move[2])
+            childval, childmoveList, childmoveTree = minimax(newside, newboard, newflags, depth-1)
+            moveTree[encode(*move)] = childmoveTree
+            if value > childval:
+              value = childval
+              moveList = [move] + childmoveList
+        return (value, moveList, moveTree)
+
+    # raise NotImplementedError("you need to write this!")
 
 def alphabeta(side, board, flags, depth, alpha=-math.inf, beta=math.inf):
     '''
@@ -71,7 +98,38 @@ def alphabeta(side, board, flags, depth, alpha=-math.inf, beta=math.inf):
       flags (list of flags): list of flags, used by generateMoves and makeMove
       depth (int >=0): depth of the search (number of moves)
     '''
-    raise NotImplementedError("you need to write this!")
+    moveList = []
+    moveTree = {}
+    moves = [move for move in generateMoves(side, board, flags)]
+    if depth == 0 or len(moves) == 0:
+        return evaluate(board), [], {}
+
+    if side == False: # maximizing player
+        value = -math.inf
+        for move in moves:
+            new_side, new_board, new_flags = makeMove(side, board, move[0], move[1], flags, move[2])
+            child_val, child_moveList, child_moveTree = alphabeta(False, new_board, new_flags, depth-1, alpha, beta)
+            moveTree[encode(*move)] = child_moveTree
+            value = max(value, evaluate(new_board))
+            alpha = max(alpha, value)
+            
+            if alpha >= beta:
+                break # beta cutoff
+        return value, [move] + child_moveList, moveTree
+
+    else: # minimizing player
+        value = math.inf
+        for move in moves:
+            new_side, new_board, new_flags = makeMove(side, board, move[0], move[1], flags, move[2])
+            child_val, child_moveList, child_moveTree = alphabeta(True, new_board, new_flags, depth-1, alpha, beta)
+            moveTree[encode(*move)] = child_moveTree
+            value = min(value, evaluate(new_board))
+            beta = min(beta, value)
+            
+            if beta <= alpha:
+                break # alpha cutoff
+        return value, [move] + child_moveList, moveTree
+    # raise NotImplementedError("you need to write this!")
     
 
 def stochastic(side, board, flags, depth, breadth, chooser):
