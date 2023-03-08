@@ -110,12 +110,12 @@ def alphabeta(side, board, flags, depth, alpha=-math.inf, beta=math.inf):
             new_side, new_board, new_flags = makeMove(side, board, move[0], move[1], flags, move[2])
             child_val, child_moveList, child_moveTree = alphabeta(False, new_board, new_flags, depth-1, alpha, beta)
             moveTree[encode(*move)] = child_moveTree
+            moveList = [move] + child_moveList
             value = max(value, evaluate(new_board))
             alpha = max(alpha, value)
-            
             if alpha >= beta:
                 break # beta cutoff
-        return value, [move] + child_moveList, moveTree
+        return (value, moveList, moveTree)
 
     else: # minimizing player
         value = math.inf
@@ -123,12 +123,12 @@ def alphabeta(side, board, flags, depth, alpha=-math.inf, beta=math.inf):
             new_side, new_board, new_flags = makeMove(side, board, move[0], move[1], flags, move[2])
             child_val, child_moveList, child_moveTree = alphabeta(True, new_board, new_flags, depth-1, alpha, beta)
             moveTree[encode(*move)] = child_moveTree
+            moveList = [move] + child_moveList
             value = min(value, evaluate(new_board))
             beta = min(beta, value)
-            
             if beta <= alpha:
                 break # alpha cutoff
-        return value, [move] + child_moveList, moveTree
+        return (value, moveList, moveTree)
     # raise NotImplementedError("you need to write this!")
     
 
