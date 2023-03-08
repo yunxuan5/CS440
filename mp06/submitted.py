@@ -107,13 +107,13 @@ def alphabeta(side, board, flags, depth, alpha=-math.inf, beta=math.inf):
     if side == False: # maximizing player
         value = -math.inf
         for move in moves:
-            new_side, new_board, new_flags = makeMove(side, board, move[0], move[1], flags, move[2])
-            child_val, child_moveList, child_moveTree = alphabeta(False, new_board, new_flags, depth-1, alpha, beta)
-            moveTree[encode(*move)] = child_moveTree
-            if value < child_val:
-              moveList = [move] + child_moveList
-              value = max(value, evaluate(new_board))
-            alpha = max(alpha, value)
+            newside, newboard, newflags = makeMove(side, board, move[0], move[1], flags, move[2])
+            childval, childmoveList, childmoveTree = alphabeta(newside, newboard, newflags, depth-1, alpha, beta)
+            moveTree[encode(*move)] = childmoveTree
+            if value < childval:
+              moveList = [move] + childmoveList
+              value = childval
+            alpha = max(alpha, childval)
             if alpha >= beta:
               break # beta cutoff
         return (value, moveList, moveTree)
@@ -121,13 +121,13 @@ def alphabeta(side, board, flags, depth, alpha=-math.inf, beta=math.inf):
     else: # minimizing player
         value = math.inf
         for move in moves:
-            new_side, new_board, new_flags = makeMove(side, board, move[0], move[1], flags, move[2])
-            child_val, child_moveList, child_moveTree = alphabeta(True, new_board, new_flags, depth-1, alpha, beta)
-            moveTree[encode(*move)] = child_moveTree
-            if value > child_val:
-              moveList = [move] + child_moveList
-              value = min(value, evaluate(new_board))
-            beta = min(beta, value)
+            newside, newboard, newflags = makeMove(side, board, move[0], move[1], flags, move[2])
+            childval, childmoveList, childmoveTree = alphabeta(newside, newboard, newflags, depth-1, alpha, beta)
+            moveTree[encode(*move)] = childmoveTree
+            if value > childval:
+              moveList = [move] + childmoveList
+              value = childval
+            beta = min(beta, childval)
             if beta <= alpha:
               break # alpha cutoff
         return (value, moveList, moveTree)
