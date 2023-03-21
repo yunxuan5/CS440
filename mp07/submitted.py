@@ -22,7 +22,27 @@ def standardize_variables(nonstandard_rules):
     @return variables (list) - a list of the variable names that were created.
         This list should contain only the variables that were used in rules.
     '''
-    raise RuntimeError("You need to write this part!")
+    # raise RuntimeError("You need to write this part!")
+
+    variables = []
+    standardized_rules = copy.deepcopy(nonstandard_rules)
+
+    for rule_key, rule in standardized_rules.items():
+        variable_name = f"var_{rule_key}"
+
+        for i, antecedent in enumerate(rule['antecedents']):
+            if 'something' in antecedent:
+                temp = rule['antecedents'][i].index('something')
+                rule['antecedents'][i] = rule['antecedents'][temp][:temp]+variable_name+rule['antecedents'][temp][temp+1:]
+                # rule['antecedents'][i] = antecedent.replace('something', variable_name)
+
+        if 'something' in rule['consequent']:
+            temp = rule['consequent'].index('something')
+            rule['consequent'] = rule['consequent'][:temp]+variable_name+rule['consequent'][temp+1:]
+            # rule['consequent'] = rule['consequent'].replace('something', variable_name)
+
+        variables.append(variable_name)
+        
     return standardized_rules, variables
 
 def unify(query, datum, variables):
@@ -73,7 +93,53 @@ def unify(query, datum, variables):
     unify([...,True],[...,False],[...]) should always return None, None, regardless of the 
       rest of the contents of the query or datum.
     '''
-    raise RuntimeError("You need to write this part!")
+    # raise RuntimeError("You need to write this part!")
+    def unify(query, datum, variables):
+    # query = copy.deepcopy(query)
+    # datum = copy.deepcopy(datum)
+    subs = {}
+    
+    def unify_helper(x, y):
+        if x == y:
+            return True
+        elif x in variables:
+            if x in subs:
+                return unify_helper(subs[x], y)
+            elif y in variables and y in subs:
+                return unify_helper(x, subs[y])
+            else:
+                subs[x] = y
+                for i in range(len(query)):
+                    if query[i] == x:
+                        query[i] = y
+                for i in range(len(datum)):
+                    if datum[i] == x:
+                        datum[i] = y
+                return True
+        elif y in variables:
+            if y in subs:
+                return unify_helper(x, subs[y])
+            else:
+                subs[y] = x
+                for i in range(len(query)):
+                    if query[i] == y:
+                        query[i] = x
+                for i in range(len(datum)):
+                    if datum[i] == y:
+                        datum[i] = x
+                return True
+        elif isinstance(x, list) and isinstance(y, list) and len(x) == len(y):
+            for i in range(len(x)):
+                if not unify_helper(x[i], y[i]):
+                    return False
+            return True
+        else:
+            return False
+    
+    if not unify_helper(query, datum):
+        return None, None
+    else:
+        return query, subs
     return unification, subs
 
 def apply(rule, goals, variables):
