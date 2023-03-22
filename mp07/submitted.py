@@ -13,7 +13,7 @@ def standardize_variables(nonstandard_rules):
     @param nonstandard_rules (dict) - dict from ruleIDs to rules
         Each rule is a dict:
         rule['antecedents'] contains the rule antecedents (a list of propositions)
-        rule['consequent'] contains the rule consequent (a proposition).
+        consequent contains the rule consequent (a proposition).
    
     @return standardized_rules (dict) - an exact copy of nonstandard_rules,
         except that the antecedents and consequent of every rule have been changed
@@ -27,21 +27,35 @@ def standardize_variables(nonstandard_rules):
     variables = []
     standardized_rules = copy.deepcopy(nonstandard_rules)
 
-    for rule_key, rule in standardized_rules.items():
-        variable_name = f"var_{rule_key}"
+    # for rule in standardized_rules:
+    #     antecedents = standardized_rules[rule]['antecedents']
+    #     print(antecedents)
 
-        for i, antecedent in enumerate(rule['antecedents']):
-            if 'something' in antecedent:
+
+
+    for rule_key, rule in standardized_rules.items():
+        # print(rule)
+        antecedents_list = rule['antecedents']
+        # print(antecedents)
+        consequent = rule['consequent']
+        # print(consequent)
+        length = len(variables)
+        x_str = 'x' + '0' * (4 - len(str(length))) + str(length)
+        # print(standardized_rules)
+        flag = 0
+        for i, antecedents in enumerate(antecedents_list):
+            if 'something' in antecedents:
+                flag = 1
                 temp = rule['antecedents'][i].index('something')
-                rule['antecedents'][i] = rule['antecedents'][temp][:temp]+variable_name+rule['antecedents'][temp][temp+1:]
+                rule['antecedents'][i] = rule['antecedents'][temp][:temp]+[x_str]+rule['antecedents'][temp][temp+1:]
                 # rule['antecedents'][i] = antecedent.replace('something', variable_name)
 
-        if 'something' in rule['consequent']:
-            temp = rule['consequent'].index('something')
-            rule['consequent'] = rule['consequent'][:temp]+variable_name+rule['consequent'][temp+1:]
-            # rule['consequent'] = rule['consequent'].replace('something', variable_name)
-
-        variables.append(variable_name)
+        if 'something' in consequent:
+            temp = consequent.index('something')
+            rule['consequent'] = rule['consequent'][:temp]+[x_str]+rule['consequent'][temp+1:]
+            # consequent = consequent.replace('something', variable_name)
+        if flag == 1:
+          variables.append(x_str)
         
     return standardized_rules, variables
 
@@ -94,53 +108,29 @@ def unify(query, datum, variables):
       rest of the contents of the query or datum.
     '''
     # raise RuntimeError("You need to write this part!")
-    def unify(query, datum, variables):
-    # query = copy.deepcopy(query)
-    # datum = copy.deepcopy(datum)
+    # def unify(query, datum, variables):
+    query_ = copy.deepcopy(query)
+    datum_ = copy.deepcopy(datum)
     subs = {}
     
-    def unify_helper(x, y):
-        if x == y:
-            return True
-        elif x in variables:
-            if x in subs:
-                return unify_helper(subs[x], y)
-            elif y in variables and y in subs:
-                return unify_helper(x, subs[y])
-            else:
-                subs[x] = y
-                for i in range(len(query)):
-                    if query[i] == x:
-                        query[i] = y
-                for i in range(len(datum)):
-                    if datum[i] == x:
-                        datum[i] = y
-                return True
-        elif y in variables:
-            if y in subs:
-                return unify_helper(x, subs[y])
-            else:
-                subs[y] = x
-                for i in range(len(query)):
-                    if query[i] == y:
-                        query[i] = x
-                for i in range(len(datum)):
-                    if datum[i] == y:
-                        datum[i] = x
-                return True
-        elif isinstance(x, list) and isinstance(y, list) and len(x) == len(y):
-            for i in range(len(x)):
-                if not unify_helper(x[i], y[i]):
-                    return False
-            return True
-        else:
-            return False
+    if query_[-1] == True and datum_[-1] == False:
+      return None, None
     
-    if not unify_helper(query, datum):
+    for i in range(len(query_)):
+      word1 = query_[i]
+      word2 = datum_[i]
+      if word1 in variables:
+        subs[word1] = word2
+        query_ = [subs[word1] if i == word1 else i for i in query_]
+
+      elif word2 in variables:
+        subs[word2] = word1
+        query_ = [subs[word2] if j == word2 else j for j in query_]
+
+      elif word2 != word1:
         return None, None
-    else:
-        return query, subs
-    return unification, subs
+
+    return query_, subs
 
 def apply(rule, goals, variables):
     '''
@@ -204,7 +194,40 @@ def apply(rule, goals, variables):
         ['bald eagle','is','hungry',False]
       ]
     '''
-    raise RuntimeError("You need to write this part!")
+    # raise RuntimeError("You need to write this part!")
+
+    rule_ = copy.deepcopy(rule)
+    goals_ = copy.deepcopy(goals)
+
+    applications = []
+    goalsets = []
+    for i in range(len(goals_)):
+      new_rule = copy.deepcopy(rule_)
+      new_goal = copy.deepcopy(goals_)
+      consequent = new_rule['consequent']
+      antecedent_list = new_rule['antecedents']
+      unification, subs = unify(new_goal[i], consequent, variables) #get the unification result
+
+      if unification == None: #ignore the goal that cannot match any rule
+         continue
+      
+      new_rule['consequent'] = unification
+      new_goal.remove(new_goal[i])  #remove the goal that match with rule
+
+      for j in range(len(antecedent_list)):
+         antecedent = antecedent_list[j]
+
+         for word in antecedent:
+            if word in subs:
+               antecedent_list[j] = [subs[word] if i == word else i for i in antecedent]  #sub word in antecedent
+
+      applications.append(new_rule) #add changed antecedents and consequent
+
+      for k in range(len(antecedent_list)):
+         new_goal = new_goal + [antecedent_list[k]]  #add matched rule to new goal
+
+      goalsets.append(new_goal)
+
     return applications, goalsets
 
 def backward_chain(query, rules, variables):
@@ -217,5 +240,20 @@ def backward_chain(query, rules, variables):
       that, when read in sequence, conclude by proving the truth of the query.
       If no proof of the query was found, you should return proof=None.
     '''
-    raise RuntimeError("You need to write this part!")
-    return proof
+    # raise RuntimeError("You need to write this part!")
+
+    proof = []
+    queue = []
+    queue.append(([query], []))
+
+    while(queue):
+       goals, proof = queue.pop()
+       if len(goals) == 0:
+          return proof
+       
+       for rule_key, rule in rules.items():
+          applications, newgoals = apply(rule, goals, variables)
+          for i in newgoals:
+             queue.append((i, applications + proof))
+
+    return None
