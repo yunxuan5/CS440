@@ -14,6 +14,7 @@ import math
 from collections import defaultdict, Counter
 from math import log
 import numpy as np
+import utils
 
 # define your epsilon for laplace smoothing here
 
@@ -25,7 +26,21 @@ def baseline(train, test):
     output: list of sentences, each sentence is a list of (word,tag) pairs.
             E.g., [[(word1, tag1), (word2, tag2)], [(word3, tag3), (word4, tag4)]]
     '''
-    raise NotImplementedError("You need to write this part!")
+    tag_count = {}
+    for sentence in train:
+        for word, tag in sentence:
+            if tag not in tag_count:
+                tag_count[word] = Counter()
+        tag_count[word][tag] += 1
+
+    tagged_sentences = []
+    for sentence in test:
+        words = utils.strip_tags(sentence)
+        tagged_words = [(word, max(tag_count.get(word, Counter()), key=tag_count.get(word, Counter()).get)) for word in words]
+        tagged_sentences.append(tagged_words)
+    
+    return tagged_sentences
+#     raise NotImplementedError("You need to write this part!")
 
 
 def viterbi(train, test):
