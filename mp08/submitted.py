@@ -21,27 +21,27 @@ import utils
 def baseline(train, test):
     '''
     Implementation for the baseline tagger.
-    input:  training data (list of sentences, with tags on the words)
+    inumpyut:  training data (list of sentences, with tags on the words)
             test data (list of sentences, no tags on the words, use utils.strip_tags to remove tags from data)
     output: list of sentences, each sentence is a list of (word,tag) pairs.
-            E.g., [[(word1, tag1), (word2, tag2)], [(word3, tag3), (word4, tag4)]]
+            E.g., [[(word1, tag), (word2, tagnxt)], [(word3, tag3), (word4, tag4)]]
     '''
-    word_tag_counts = {}
+    word_tag_count = {}
     tags = [tag for sent in train for _, tag in sent]
     common_tag = max(set(tags), key = tags.count)       #get common tags of the whole dataset
 
     for sentence in train:
         for word, tag in sentence:
-            if word not in word_tag_counts:
-                word_tag_counts[word] = {}
-            if tag not in word_tag_counts[word]:
-                word_tag_counts[word][tag] = 0
-            word_tag_counts[word][tag] += 1     #count the occurance of tags for each word
+            if word not in word_tag_count:
+                word_tag_count[word] = {}
+            if tag not in word_tag_count[word]:
+                word_tag_count[word][tag] = 0
+            word_tag_count[word][tag] += 1     #count the occurance of tags for each word
             
     word_tags = {}
 
-    for word in word_tag_counts:
-        tags = word_tag_counts[word]
+    for word in word_tag_count:
+        tags = word_tag_count[word]
         most_common_tag = max(tags, key=tags.get)
         word_tags[word] = most_common_tag       #get the most common tag of each word
     
@@ -65,248 +65,140 @@ def baseline(train, test):
 # def viterbi(train, test):
 # 	'''
 # 	Implementation for the viterbi tagger.
-# 	input:  training data (list of sentences, with tags on the words)
+# 	inumpyut:  training data (list of sentences, with tags on the words)
 # 			test data (list of sentences, no tags on the words)
 # 	output: list of sentences with tags on the words
-# 			E.g., [[(word1, tag1), (word2, tag2)], [(word3, tag3), (word4, tag4)]]
+# 			E.g., [[(word1, tag), (word2, tagnxt)], [(word3, tag3), (word4, tag4)]]
 # 	'''
 import math
 
+
 def viterbi(train, test):
-    '''
-    Implementation for the viterbi tagger.
-    input:  training data (list of sentences, with tags on the words)
-            test data (list of sentences, no tags on the words)
-            alpha: smoothing constant (default=1)
-    output: list of sentences with tags on the words
-            E.g., [[(word1, tag1), (word2, tag2)], [(word3, tag3), (word4, tag4)]]
-    '''
-    train_set = [word_tag for sentence in train for word_tag in sentence]
-    alpha = 1e-3
-    # Count occurrences of tags, tag pairs, tag/word pairs
-    tag_count = {} # count of each tag
-    tag_pair_count = {} # count of each tag pair
-    tag_word_count = {} # count of each tag/word pair
-    word_set = set() # set of all words in the training data
-    
-    for sentence in train:
-        for i in range(len(sentence)):
-            word, tag = sentence[i]
-            if tag not in tag_count:
-                tag_count[tag] = 1
-            else:
-                tag_count[tag] += 1
-            if i == 0:
-                # First word in sentence
-                if ("START", tag) not in tag_pair_count:
-                    tag_pair_count[("START", tag)] = 1
-                else:
-                    tag_pair_count[("START", tag)] += 1
-            else:
-                # Not first word in sentence
-                prev_tag = sentence[i-1][1]
-                if (prev_tag, tag) not in tag_pair_count:
-                    tag_pair_count[(prev_tag, tag)] = 1
-                else:
-                    tag_pair_count[(prev_tag, tag)] += 1
-            if (tag, word) not in tag_word_count:
-                tag_word_count[(tag, word)] = 1
-            else:
-                tag_word_count[(tag, word)] += 1
-            word_set.add(word)
-    
-	# for i in range(len(train_set)-1):
-    #      word, tag = train_set[i]
-    #      next_tag = train_set[i+1][1]
-    #      tag_count[tag] += 1
-    #      tag_pair_count[tag][next_tag] += 1
-    #      word
-        
-    
-    # Compute smoothed probabilities
-    num_tags = len(tag_count)
-    initial_prob = {}
-    transition_prob = {}
-    emission_prob = {}
-    
-    for tag in tag_count:
-        # Compute initial probability
-        initial_prob[tag] = (tag_pair_count[("START", tag)] + alpha) / (tag_count["START"] + alpha * num_tags)
-        # Compute transition probabilities
-        for next_tag in tag_count:
-            transition_prob[(tag, next_tag)] = (tag_pair_count.get((tag, next_tag), 0) + alpha) / (tag_count[tag] + alpha * num_tags)
-        # Compute emission probabilities
-        for word in word_set:
-            emission_prob[(tag, word)] = (tag_word_count.get((tag, word), 0) + alpha) / (tag_count[tag] + alpha*(len(word_set)+1))
-        # Compute emission probability for "UNKNOWN" words
-        emission_prob[(tag, "UNKNOWN")] = alpha / (tag_count[tag] + alpha*(len(word_set)+1))
-    
-    # Take the log of each probability
-    for key in initial_prob:
-        initial_prob[key] = math.log(initial_prob[key])
-    for key in transition_prob:
-        transition_prob[key] = math.log(transition_prob[key])
-    for key in emission_prob:
-        emission_prob[key] = math.log(emission_prob[key])
-        
-	# result = []
-    result = []
-    for i, sentence in enumerate(test):
-         try:
-              result = _viterbi(sentence[1:], initial_prob, transition_prob, emission_prob)
-         except:
-             print(i)
-         test[i][0] = ("START", "START")
-         for j, word in enumerate(sentence[1:]):
-             try:
-                  test[i][j+1] = (word, result[j])
-             except:
-                  print(i, j)
-    return test
+	'''
+	Implementation for the viterbi tagger.
+	inumpyut:  training data (list of sentences, with tags on the words)
+			test data (list of sentences, no tags on the words)
+	output: list of sentences with tags on the words
+			E.g., [[(word1, tag), (word2, tagnxt)], [(word3, tag3), (word4, tag4)]]
+	'''
 
-    
-    # Construct the trellis
-	# result = []
-	# for j, sentence in enumerate(test):
-              
-        
-    # for j, sentence in enumerate(test):
-	#     try:
-	# 	    result = _viterbi(sentence[1:], initial_prob, transition_prob, emission_prob)
-    #     except:
-	#         print(j)
-	#     test[j][0] = ("START", "START")
-	# 	# test[j][-1] = ('END', 'END')
-	#     for i, word in enumerate(sentence[1:]):
-	# 		try:
-	# 			test[j][i+1] = (word, result[i])
-	# 		except:
-	# 			print(j, i)
-
-	# return test
-
-
-# 	train_set = [word_tag for sentence in train for word_tag in sentence]
+	alpha = 1e-3
 	
-# 	## Count occurrences of tags, tag pairs, and tag/word pairs
-# 	tag_counts = Counter()
-# 	tag_pair_counts = defaultdict(Counter)
-# 	word_tag_counts = defaultdict(Counter)
-# 	tag_word_counts = defaultdict(Counter)
+	tag_count = Counter()
+	tag_pair_count = defaultdict(Counter)   #tag and next tag pair
+	word_tag_count = defaultdict(Counter)
+	tag_word_count = defaultdict(Counter)
+	initial_p = defaultdict(float)
+	transition_p = defaultdict(lambda: defaultdict(float))
+	emission_p = defaultdict(lambda: defaultdict(float))
+	set = [word_tag for sentence in train for word_tag in sentence]
+	num_tag = len(set)
 	
-# 	for i in range(len(train_set)-1):
-# 		word, tag = train_set[i]
-# 		# if tag == "START" or tag == "END":
-# 		# 	continue
-# 		next_tag = train_set[i+1][1]
-# 		tag_counts[tag] += 1
-# 		tag_pair_counts[tag][next_tag] += 1
-# 		word_tag_counts[word][tag] += 1
-# 		tag_word_counts[tag][word] += 1
-# 	word, tag = train_set[-1]
-# 	tag_counts[tag] += 1
-# 	word_tag_counts[word][tag] += 1
-# 	tag_word_counts[tag][word] += 1
+	for i in range(num_tag - 1):
+		word, tag = set[i]
+		next_tag = set[i+1][1]
+		tag_count[tag] += 1
+		tag_pair_count[tag][next_tag] += 1
+		word_tag_count[word][tag] += 1
+		tag_word_count[tag][word] += 1
+		
+	word, tag = set[-1]
+	tag_count[tag] += 1
+	word_tag_count[word][tag] += 1
+	tag_word_count[tag][word] += 1
 
-    # num_tags = len(tag_count)
-    # initial_prob = {}
-    # transition_prob = {}
-    # emission_prob = {}
-    # for tag in tag_count:
-    #     # Compute initial probability
-    #     initial_prob[tag] = (tag_pair_count[("START", tag)] + alpha) / (tag_count[tag] + alpha*num_tags)
-    #     # Compute transition probabilities
-    #     for next_tag in tag_count:
-    #         transition_prob[(tag, next_tag)] = (tag_pair_count.get((tag, next_tag), 0) + alpha) / (tag_count[tag] + alpha*num_tags)
-    #     # Compute emission probabilities
-    #     for word in word_set:
-    #         emission_prob[(tag, word)] = (tag_word_count.get((tag, word), 0) + alpha) / (tag_count[tag] + alpha*(len(word_set)+1))
-    #     # Compute emission probability for "UNKNOWN" words
-    #     emission_prob[(tag, "UNKNOWN")] = alpha / (tag_count[tag] + alpha*(len(word_set)+1))
-    
-    # # Take the log of each probability
-    # for key in initial_prob:
-    #     initial_prob[key] = math.log(initial_prob[key])
-    # for key in transition_prob:
-    #     transition_prob[key] = math.log(transition_prob[key])
-    # for key in emission_prob:
-    #     emission_prob[key] = math.log(emission_prob[key])
-    
-# 	# Construct the trellis
-# 	result = []
-# 	for j, sentence in enumerate(test):
-# 		try:
-# 			result = _viterbi(sentence[1:], initial_prob, transition_prob, observation_prob)
-# 		except:
-# 			print(j)
-# 		test[j][0] = ("START", "START")
-# 		# test[j][-1] = ('END', 'END')
-# 		for i, word in enumerate(sentence[1:]):
-# 			try:
-# 				test[j][i+1] = (word, result[i])
-# 			except:
-# 				print(j, i)
+    #get three different probabilities
+	for tag, num in tag_count.items():
+		denom = alpha * (len(tag_count)) + tag_count['START']
+		initial_likelihood = (tag_pair_count['START'][tag] + alpha) / denom
+		initial_p[tag] = -np.log(initial_likelihood)
 
-# 	return test
+		for tagnxt in tag_count:
+			count_tag_tagnxt = tag_pair_count[tag][tagnxt]
+			count_tag = sum(tag_pair_count[tag].values())
+			denom = count_tag + (len(tag_count)) * alpha
+			transition_likelihood = (count_tag_tagnxt + alpha) / denom
+			transition_p[tag][tagnxt] = -np.log(transition_likelihood)
+			
+		denom = tag_count[tag] + alpha * (len(tag_word_count[tag]) + 1)
+		emission_p['UNKNOWN'][tag] = -np.log(alpha / denom)
+		
+		for word in tag_word_count[tag]:
+			if tag in word_tag_count[word]:
+				emission_likelihood = (word_tag_count[word][tag] + alpha) / denom
+				emission_p[word][tag] = -np.log(emission_likelihood) 
 
-def _viterbi(words, initial_prob, transition_prob, observation_prob):
-	## Initialization
-	node_prob = defaultdict(lambda:defaultdict(float))
+	result = []
+	for i, sentence in enumerate(test):
+		result = viterbi_helper(sentence[1:], initial_p, transition_p, emission_p)
+		test[i][0] = ("START", "START")
+		
+		for j, word in enumerate(sentence[1:]):
+			test[i][j+1] = (word, result[j])
+
+	return test
+
+def viterbi_helper(words, initial_p, transition_p, emission_p):
+	
+	prob = defaultdict(lambda:defaultdict(float))
 	backtrace = defaultdict(lambda:defaultdict())
 	
-	first_word = words[0]
-	if first_word not in observation_prob:
-		first_word = 'UNKNOWN'
-	for tag, prob in observation_prob[first_word].items():
-		node_prob[0][tag] = prob + initial_prob[tag]
-	
-	## Iteration
+	first = words[0]
+	if first not in emission_p:
+		first = 'UNKNOWN'
+		
+	for tag, pb in emission_p[first].items():
+		prob[0][tag] = pb + initial_p[tag]
+
 	for i, word in enumerate(words[1:]):
-		index = i + 1
-		if word not in observation_prob:
+		idx = i + 1
+		
+		if word not in emission_p:
 			word = 'UNKNOWN'
-		for cur_tag in observation_prob[word]:
-			arg_max_v = None
-			max_v = float('inf')
-			for last_tag in node_prob[index-1]:
-				cur_val = node_prob[index-1][last_tag]+transition_prob[last_tag][cur_tag]+observation_prob[word][cur_tag]
-				if (cur_val < max_v):
-					max_v = cur_val
-					arg_max_v = last_tag
-			node_prob[index][cur_tag] = max_v
-			backtrace[index][cur_tag] = arg_max_v
+			
+		for cur_tag in emission_p[word]:
+			argmax_v = None
+			max_v = math.inf
+			
+			for last in prob[idx-1]:
+				current = prob[idx-1][last]+transition_p[last][cur_tag]+emission_p[word][cur_tag]
+				if (current < max_v):
+					max_v = current
+					argmax_v = last
+			prob[idx][cur_tag] = max_v
+			backtrace[idx][cur_tag] = argmax_v
 
-	## Termination
-	final_tag = None
-	max_prob = float('inf')
-	for tag in node_prob[len(words)-1]:
-		cur_val = node_prob[len(words)-1][tag]
-		if (cur_val < max_prob):
-			max_prob = cur_val
-			final_tag = tag
+	final = None
+	max = math.inf
+	for tag in prob[len(words)-1]:
+		current = prob[len(words)-1][tag]
+		if (current < max):
+			max = current
+			final = tag
 
-	## Back-Trace
-	result_tag = [final_tag]
-	last_tag = final_tag
+	result = [final]
+	last = final
+	
 	for i in range(len(words) -1):
-		index = len(words) - 1 - i
-		last_tag = backtrace[index][last_tag]
-		result_tag.append(last_tag)
-		if (index == 1):
+		idx = len(words) - 1 - i
+		last = backtrace[idx][last]
+		result.append(last)
+		
+		if (idx == 1):
 			break
 		
-	result_tag = [result_tag[len(result_tag)-i-1] for i in range(len(result_tag))]
+	result = [result[len(result)-i-1] for i in range(len(result))]
 
-	return result_tag	
+	return result	
 	
 
 def viterbi_ec(train, test):
     '''
     Implementation for the improved viterbi tagger.
-    input:  training data (list of sentences, with tags on the words). E.g.,  [[(word1, tag1), (word2, tag2)], [(word3, tag3), (word4, tag4)]]
+    inumpyut:  training data (list of sentences, with tags on the words). E.g.,  [[(word1, tag), (word2, tagnxt)], [(word3, tag3), (word4, tag4)]]
             test data (list of sentences, no tags on the words). E.g.,  [[word1, word2], [word3, word4]]
     output: list of sentences, each sentence is a list of (word,tag) pairs.
-            E.g., [[(word1, tag1), (word2, tag2)], [(word3, tag3), (word4, tag4)]]
+            E.g., [[(word1, tag), (word2, tagnxt)], [(word3, tag3), (word4, tag4)]]
     '''
     raise NotImplementedError("You need to write this part!")
 
