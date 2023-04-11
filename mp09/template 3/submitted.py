@@ -12,12 +12,14 @@ If you are not sure how to use PyTorch, you may want to take a look at the tutor
 
 import os
 import numpy as np
+import pandas as pd
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, ConcatDataset
 from torchvision import transforms
+
 
 from models import resnet18
 
@@ -38,13 +40,18 @@ class CIFAR10(Dataset):
         Initialize your dataset here. Note that transform and target_transform
         correspond to your data transformations for train and test respectively.
         """
-        raise NotImplementedError("You need to write this part!")
+        # raise NotImplementedError("You need to write this part!")
+        self.img_labels = pd.read_csv(data_files)
+        # self.img_dir = img_dir
+        self.transform = transform
+        self.target_transform = target_transform
 
     def __len__(self):
         """
         Return the length of your dataset here.
         """
-        raise NotImplementedError("You need to write this part!")
+        # raise NotImplementedError("You need to write this part!")
+        return len(self.img_labels)
 
     def __getitem__(self, idx):
         """
@@ -56,7 +63,15 @@ class CIFAR10(Dataset):
         Outputs:
             y:      a tuple (image, label), although this is arbitrary so you can use whatever you would like.
         """
-        raise NotImplementedError("You need to write this part!")
+        # raise NotImplementedError("You need to write this part!")
+        # img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
+        # image = read_image(img_path)
+        label = self.img_labels.iloc[idx, 1]
+        if self.transform:
+            image = self.transform(image)
+        if self.target_transform:
+            label = self.target_transform(label)
+        return image, label
     
 
 def get_preprocess_transform(mode):
@@ -66,8 +81,28 @@ def get_preprocess_transform(mode):
     Outputs:
         transform:      a torchvision transforms object e.g. transforms.Compose([...]) etc.
     """
-
-    raise NotImplementedError("You need to write this part!")
+    # raise NotImplementedError("You need to write this part!")
+    if mode == 'train':
+    # Define preprocessing transforms for training mode
+        transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(10),
+            transforms.RandomCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+    elif mode == 'test':
+    # Define preprocessing transforms for testing mode
+        transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+    else:
+        raise ValueError("Invalid mode. Must be 'train' or 'test'.")
+        
+    return transform
 
 
 def build_dataset(data_files, transform=None):
@@ -78,7 +113,12 @@ def build_dataset(data_files, transform=None):
     Outputs:
         dataset:      a PyTorch dataset object to be used in training/testing
     """
-    raise NotImplementedError("You need to write this part!")
+    # raise NotImplementedError("You need to write this part!")
+    datasets = []
+    for file in data_files:
+        dataset = CIFAR10(train=True, download=True, transform=transform)
+        datasets.append(dataset)
+    return ConcatDataset(datasets)
 
 
 """
@@ -96,7 +136,9 @@ def build_dataloader(dataset, loader_params):
     Outputs:
         dataloader:      a PyTorch dataloader object to be used in training/testing
     """
-    raise NotImplementedError("You need to write this part!")
+    # raise NotImplementedError("You need to write this part!")
+    dataloader = DataLoader(dataset, batch_size=loader_params["batch_size"], shuffle=loader_params["shuffle"])
+    return dataloader
 
 
 """
